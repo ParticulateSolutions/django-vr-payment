@@ -1,4 +1,5 @@
 import json
+from urllib.request import Request
 
 from django.db.models import Q, QuerySet
 from django.db.models.manager import Manager
@@ -9,6 +10,7 @@ from .utils.transaction_status import (
     TRANSACTION_PENDING_REGEX,
     TRANSACTION_PENDING_MIGHT_CHANGE_EXTERNALLY_REGEX,
 )
+from .utils.webhooks import decrypt_webhook
 
 
 class VRPaymentBasicPaymentManager(Manager):
@@ -125,3 +127,26 @@ class VRPaymentAPIResponseManger(Manager):
         return self.filter(
             result_code__regex=TRANSACTION_PENDING_MIGHT_CHANGE_EXTERNALLY_REGEX
         )
+
+
+class VRPaymentWebhookManager(Manager):
+    def create_from_request(self, config_key: str, request: Request):
+        header_dict = dict(request.headers)
+
+        decrypted_payload = decrypt_webhook(
+            config_key=config_key,
+            Initialization_vector=header_dict["X-Initialization-Vector"],
+            auth_tag=header_dict["X-Authentication-Tag"],
+            http_body=request.body,
+        )
+        body_json = json.loads(decrypted_payload.decode(("utf8")))
+        webhook = self.model(
+            raw_headers=json.dumps(header_dict),
+            webhook_type=body_json.get("type").lower(),
+            webhook_action=body_json.get("action").lower()
+            if "action " in body_json
+            else None,
+            decrypted_body=body_json,
+        )
+        webhook.save()
+        return webhook

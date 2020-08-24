@@ -487,7 +487,7 @@ class Migration(migrations.Migration):
                     models.OneToOneField(
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="checkout_response",
-                        to="vr_payment.VRPaymentBasicPayment",
+                        to="django_vr_payment.VRPaymentBasicPayment",
                         verbose_name="VR Payment Basic Payment Checkout",
                     ),
                 ),
@@ -793,7 +793,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="payment_responses",
-                        to="vr_payment.VRPaymentBasicPayment",
+                        to="django_vr_payment.VRPaymentBasicPayment",
                         verbose_name="VR Payment Basic Checkouts",
                     ),
                 ),

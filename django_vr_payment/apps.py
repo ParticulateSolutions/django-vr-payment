@@ -2,4 +2,5 @@ from django.apps import AppConfig
 
 
 class VrPaymentConfig(AppConfig):
-    name = "apps.vr_payment"
+    name = "django_vr_payment"
+    verbose_name = "Django VR Payment"
