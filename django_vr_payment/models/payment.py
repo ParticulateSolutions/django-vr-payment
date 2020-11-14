@@ -1,5 +1,10 @@
 from django.core.exceptions import MultipleObjectsReturned
-from django.core.validators import MinLengthValidator, RegexValidator, MinValueValidator, MaxValueValidator
+from django.core.validators import (
+    MinLengthValidator,
+    RegexValidator,
+    MinValueValidator,
+    MaxValueValidator,
+)
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -9,7 +14,9 @@ from .mixins import (
     VRPaymentResultDetails,
     VRPayApiResponseMixin,
     VRPaymentCardMixin,
-    VRPaymentMerchantMixin)
+    VRPaymentMerchantMixin,
+)
+from .webhooks import VRPaymentWebhook
 
 try:
     # Django 3.1
@@ -72,7 +79,7 @@ class AbstractVRPaymentResponse(
         default="EUR",
         help_text="The ISO 4217 currency code of the payment request's amount",
         max_length=3,
-        null=True
+        null=True,
     )
     descriptor = models.CharField(
         "Descriptor",
@@ -85,10 +92,7 @@ class AbstractVRPaymentResponse(
         "Risk score",
         blank=True,
         help_text="Returns the score of the executed transaction risk checks. The value is a number from -99999 to +99999. Can be returned both for standalone risk requests and payment requests that include risk checks.",
-        validators=[
-            MinValueValidator(-99999),
-            MaxValueValidator(99999)
-        ],
+        validators=[MinValueValidator(-99999), MaxValueValidator(99999)],
         null=True,
     )
     other = BaseJSONField(
@@ -251,6 +255,7 @@ class VRPaymentBasicPayment(BaseModel):
         validators=[RegexValidator(r"[a-zA-Z0-9]{32}")],
     )
     objects = VRPaymentBasicPaymentManager()
+
     class Meta:
         verbose_name = "VR Payment Basic Payment Checkout"
         verbose_name_plural = "VR Payment Basic Checkouts"
@@ -332,3 +337,16 @@ class VRPaymentCheckoutResponse(AbstractVRPaymentResponse):
     class Meta:
         verbose_name = "VR Payment Checkout Reponse"
         verbose_name_plural = "VR Payment Checkout Reponses"
+
+
+class VRPaymentWebhookPaymentPayload(AbstractVRPaymentResponse):
+    webhook = models.OneToOneField(
+        VRPaymentWebhook,
+        on_delete=models.CASCADE,
+        related_name="payment_payload",
+        verbose_name="VR Payment Webhook Payload",
+    )
+
+    class Meta:
+        verbose_name = "VR Payment Webhook Payload"
+        verbose_name_plural = "VR Payment Webhook Payloads"

@@ -6,6 +6,7 @@ from ..models import VRPaymentBasicPayment, VRPaymentBasicPaymentStatusResponse
 
 logger = logging.getLogger(__name__)
 
+
 class TransactionWrapper(object):
     """
     https://vr-pay-ecommerce.docs.oppwa.com/tutorials/reporting/transaction

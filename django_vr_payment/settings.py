@@ -1,6 +1,6 @@
 from django.conf import settings
 
-DJANGO_VR_PAYMENT_VERSION = "0.0.1"
+DJANGO_VR_PAYMENT_VERSION = "0.2.0"
 
 # VR Payment Settings
 VR_PAYMENT_BEARER_TOKEN = getattr(
@@ -11,7 +11,11 @@ VR_PAYMENT_BEARER_TOKEN = getattr(
 VR_PAYMENT_ENTITY_ID = getattr(
     settings, "VR_PAYMENT_ENTITY_ID", "8a8294174e735d0c014e78beb6b9154b"
 )
-
+VR_PAYMENT_CONFIG_KEY = getattr(
+    settings,
+    "VR_PAYMENT_ENTITY_ID",
+    "000102030405060708090a0b0c0d0e0f000102030405060708090a0b0c0d0e0f",  # from https://vr-pay-ecommerce.docs.oppwa.com/tutorials/webhooks/decryption-example
+)
 VR_PAYMENT_SANDBOX = getattr(settings, "VR_PAYMENT_SANDBOX", True)
 VR_PAYMENT_TEST_URL = getattr(
     settings, "VR_PAYMENT_TEST_URL", "https://test.vr-pay-ecommerce.de/"

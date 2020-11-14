@@ -4,14 +4,19 @@ from django.http import (
     HttpResponseBadRequest,
     Http404,
     HttpResponseRedirect,
+    HttpResponse,
 )
 from django.urls import reverse
 from django.utils.datastructures import MultiValueDictKeyError
+from django.utils.decorators import method_decorator
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 
 from . import settings
 from .models import VRPaymentBasicPayment
+from .models.webhooks import VRPaymentWebhook
+from .utils.webhooks import decrypt_webhook
 from .wrapper import VRPaymentWrapper
 
 
@@ -61,7 +66,9 @@ class VRPaymentReturnView(View):
     def get_success_url(self):
         return reverse(settings.VR_PAYMENT_SUCCESS_URL_NAME)
 
-    def get_redirect_url(self, entity_id: str = None, bearer_token: str = None, sandbox: bool = None):
+    def get_redirect_url(
+        self, entity_id: str = None, bearer_token: str = None, sandbox: bool = None
+    ):
         redirect_url = None
         # check if already successful
         latest_payment_response = self.basic_payment.payment_responses.last()
@@ -69,14 +76,18 @@ class VRPaymentReturnView(View):
             redirect_url = (
                 self.get_success_url()
                 if latest_payment_response
-                   == self.basic_payment.payment_responses.filter_successfully_processed().last()
+                == self.basic_payment.payment_responses.filter_successfully_processed().last()
                 else None
             )
 
         if not redirect_url:
             # check status from VR Pay
-            vr_payment_wrapper = VRPaymentWrapper(entity_id=entity_id, bearer_token=bearer_token, sandbox=sandbox)
-            vr_payment_status = vr_payment_wrapper.get_checkout_status(basic_payment=self.basic_payment)
+            vr_payment_wrapper = VRPaymentWrapper(
+                entity_id=entity_id, bearer_token=bearer_token, sandbox=sandbox
+            )
+            vr_payment_status = vr_payment_wrapper.get_checkout_status(
+                basic_payment=self.basic_payment
+            )
             if vr_payment_status.is_successful:
                 self.basic_payment.payment_id = vr_payment_status.vr_pay_id
                 redirect_url = self.get_success_url()
@@ -110,3 +121,12 @@ class VRPaymentReturnView(View):
         update_fields.append("payment_id")
         self.basic_payment.save(update_fields=update_fields)
         return HttpResponseRedirect(self.get_redirect_url())
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class VRPaymentWebhookView(View):
+    config_key = settings.VR_PAYMENT_CONFIG_KEY
+
+    def post(self, request, *args, **kwargs):
+        VRPaymentWebhook.objects.create_from_request(self.config_key, self.request)
+        return HttpResponse(status=202)  # Accepted
