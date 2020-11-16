@@ -18,13 +18,8 @@ from .mixins import (
 )
 from .webhooks import VRPaymentWebhook
 
-try:
-    # Django 3.1
-    from django.db.models import JSONField as BaseJSONField
-except ImportError:
-    from django.contrib.postgres.fields import JSONField as BaseJSONField
 
-from ..fields import VRPaymentDecimalField
+from ..fields import VRPaymentDecimalField, JSONField
 from ..managers import VRPaymentAPIResponseManger, VRPaymentBasicPaymentManager
 from ..utils.transaction_status import (
     check_transaction_successful,
@@ -103,7 +98,7 @@ class AbstractVRPaymentResponse(
         max_length=255,
         validators=[MinLengthValidator(8)],
     )
-    other = BaseJSONField(
+    other = JSONField(
         "Other",
         blank=True,
         help_text="The response can also contain each of the data structures listed above, such as 'customer' and 'billingAddress'.",

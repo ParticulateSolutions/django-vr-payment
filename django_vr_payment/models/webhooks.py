@@ -1,19 +1,14 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from django_vr_payment.managers import VRPaymentWebhookManager
+from ..fields import JSONField
+from ..managers import VRPaymentWebhookManager
 
-try:
-    # Django 3.1
-    from django.db.models import JSONField as BaseJSONField
-except ImportError:
-    from django.contrib.postgres.fields import JSONField as BaseJSONField
-
-from django_vr_payment.models.core import BaseModel
+from .core import BaseModel
 
 
 class VRPaymentWebhook(BaseModel):
-    raw_headers = BaseJSONField("Headers", help_text="response header as json")
+    raw_headers = JSONField("Headers", help_text="response header as json")
     webhook_type = models.CharField(
         "Webhook type",
         blank=False,
@@ -28,7 +23,7 @@ class VRPaymentWebhook(BaseModel):
         max_length=64,  # don't actually know; test environment != docs…
         null=True,
     )
-    decrypted_body = BaseJSONField(
+    decrypted_body = JSONField(
         "Decrypted body",
         blank=False,
         help_text="The decrypted request.body in JSON",
