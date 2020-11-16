@@ -44,5 +44,5 @@ urlpatterns = [
         ),
         name="status-error",
     ),
-    path("webhook/", views.VRPaymentWebhookView.as_view(), name="webhook"),
+    path("webhooks/", views.VRPaymentWebhookView.as_view(), name="webhook"),
 ]

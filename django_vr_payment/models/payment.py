@@ -95,6 +95,14 @@ class AbstractVRPaymentResponse(
         validators=[MinValueValidator(-99999), MaxValueValidator(99999)],
         null=True,
     )
+    merchant_transaction_id = models.CharField(
+        "Merchant transaction ID",
+        blank=False,
+        help_text="Merchant-provided reference number, should be unique for your transactions. "
+        "Some receivers require this ID. This identifier is often used for reconciliation.",
+        max_length=255,
+        validators=[MinLengthValidator(8)],
+    )
     other = BaseJSONField(
         "Other",
         blank=True,
@@ -271,47 +279,6 @@ class VRPaymentBasicPayment(BaseModel):
     def checkout_id(self):
         return self.checkout_response.vr_pay_id
 
-    def _get_status_response_attr(self, attr: str,) -> bool:
-        """
-        check latest response for its result_code. Used as fallback if filters failed…
-        :param attr: attribute which is to be gotten
-        """
-        last_status_response = self.status_responses.last()
-        try:
-            return getattr(last_status_response, attr)
-        except AttributeError:
-            raise VRPaymentBasicPaymentStatusResponse.DoesNotExist("no status yet")
-
-    def _reset_payment_id_with_successful_status_response(self):
-        payment_ids = (
-            self.status_responses.filter_successfully_processed_all()
-            .order_by()
-            .values_list("content__id", flat=True)
-            .distinct()
-        )
-        if len(payment_ids) > 1:
-            raise MultipleObjectsReturned("payment ids are not unique!")
-        self.payment_id = payment_ids.first()
-        self.save(update_fields=["payment_id"])
-
-    def check_status_is_successful(self) -> bool:
-        if self.payment_id:
-            return True
-        if self.status_responses.filter_successfully_processed_all().exists():
-            self._reset_payment_id_with_successful_status_response()
-            return True
-        return self._get_status_response_attr("is_successful")
-
-    def check_status_is_pending(self) -> bool:
-        return (
-            True
-            if self.status_responses.filter_pending_all().exists()
-            else self._get_status_response_attr("is_pending")
-        )
-
-    def check_status_is_rejected(self) -> bool:
-        return self._get_status_response_attr("is_rejected")
-
 
 class VRPaymentBasicPaymentStatusResponse(AbstractVRPaymentResponse):
     basic_payment = models.ForeignKey(
@@ -340,6 +307,12 @@ class VRPaymentCheckoutResponse(AbstractVRPaymentResponse):
 
 
 class VRPaymentWebhookPaymentPayload(AbstractVRPaymentResponse):
+    basic_payment = models.ForeignKey(
+        VRPaymentBasicPayment,
+        on_delete=models.CASCADE,
+        related_name="webhook_responses",
+        verbose_name=VRPaymentBasicPayment._meta.verbose_name_plural,
+    )
     webhook = models.OneToOneField(
         VRPaymentWebhook,
         on_delete=models.CASCADE,

@@ -1,6 +1,7 @@
 import json
 from urllib.request import Request
 
+from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from django.db.models import Q, QuerySet
 from django.db.models.manager import Manager
 
@@ -30,6 +31,23 @@ class VRPaymentAPIResponseManger(Manager):
             # querying the transaction status can return several payments, but we currently only support one
             assert len(response_json["payments"]) == 1, "too many payments in response"
             response_json.update(response_json["payments"].pop())
+        vr_pay_id=response_json.get("id")
+        reference_id = response_json.get("referencedId"),
+        merchant_transaction_id = response_json.get("merchantTransactionId", basic_payment.merchant_transaction_id if basic_payment else None)
+        if not basic_payment:
+            from .models import VRPaymentBasicPayment
+            try:
+                basic_payment = VRPaymentBasicPayment.objects.get(Q(
+                    Q(vr_pay_id=vr_pay_id) |
+                    Q(merchant_transaction_id=merchant_transaction_id) |
+                    Q(reference_id=reference_id))
+                )
+            except MultipleObjectsReturned:
+                basic_payment = VRPaymentBasicPayment.objects.get(merchant_transaction_id=merchant_transaction_id)
+            except ObjectDoesNotExist:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"no {VRPaymentBasicPayment.Meta.verbose_name} found for vr_pay_id: '{vr_pay_id}'")
         vr_response = self.model(
             basic_payment=basic_payment,
             http_status_code=response.status_code,
@@ -38,8 +56,8 @@ class VRPaymentAPIResponseManger(Manager):
             raw_content=response.json(),  # response_json might have been altered already; save the raw json!
             build_number=response_json.get("buildNumber"),
             ndc=response_json.get("ndc"),
-            vr_pay_id=response_json.get("id"),
-            reference_id=response_json.get("referencedId"),
+            vr_pay_id=vr_pay_id,
+            reference_id=reference_id,
             payment_brand=response_json.get("paymentBrand"),
             amount=response_json.get("amount"),
             currency=response_json.get("currency"),
@@ -93,6 +111,7 @@ class VRPaymentAPIResponseManger(Manager):
             risk_score=response_json["risk"].get("score")
             if "risk" in response_json
             else None,
+            merchant_transaction_id=merchant_transaction_id,
             other=response_json.get("Other"),
         )
         vr_response.save()
