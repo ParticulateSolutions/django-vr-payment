@@ -53,8 +53,12 @@ class CheckOutWrapper(object):
             "merchantInvoiceId": merchant_invoice_id,
             "merchantMemo": merchant_memo,
             "transactionCategory": transaction_category,
-            **kwargs,  # additional information. You need to keep track of these yourself
         }
+        if kwargs:
+            # for some reasons "billing.city" is not meant as json but as string, so we need to convert kwargs
+            for kwarg in kwargs:
+                for element in kwargs.get(kwarg):
+                    data.update({kwarg + "." + element: kwargs.get(kwarg).get(element)})
         response = self._call_api("/v1/checkouts", "POST", data=data)
         basic_payment = VRPaymentBasicPayment.objects.create(
             entity_id=self.entity_id,
