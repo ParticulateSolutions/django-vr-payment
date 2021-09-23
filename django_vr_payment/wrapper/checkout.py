@@ -1,4 +1,3 @@
-import json
 from decimal import Decimal
 
 import requests
