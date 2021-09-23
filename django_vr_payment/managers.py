@@ -1,4 +1,5 @@
 import json
+import logging
 from urllib.request import Request
 
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
@@ -13,6 +14,8 @@ from .utils.transaction_status import (
 )
 from .utils.webhooks import decrypt_webhook
 
+logger = logging.getLogger(__name__)
+
 
 class VRPaymentBasicPaymentManager(Manager):
     def get(self, *args, **kwargs):
@@ -26,7 +29,11 @@ class VRPaymentAPIResponseManger(Manager):
     def create_from_response(
         self, response, basic_payment=None,
     ):
-        response_json = response.json()
+        try:
+            response_json = response.json()
+        except json.JSONDecodeError as ex:
+            logger.error("VRPaymentAPIResponseManger response could not be parsed as JSON!", ex, response)
+            return None
         if "payments" in response_json:
             # querying the transaction status can return several payments, but we currently only support one
             assert len(response_json["payments"]) == 1, "too many payments in response"
@@ -45,8 +52,6 @@ class VRPaymentAPIResponseManger(Manager):
             except MultipleObjectsReturned:
                 basic_payment = VRPaymentBasicPayment.objects.get(merchant_transaction_id=merchant_transaction_id)
             except ObjectDoesNotExist:
-                import logging
-                logger = logging.getLogger(__name__)
                 logger.warning(f"no {VRPaymentBasicPayment.Meta.verbose_name} found for vr_pay_id: '{vr_pay_id}'")
         vr_response = self.model(
             basic_payment=basic_payment,
