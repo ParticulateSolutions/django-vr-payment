@@ -23,18 +23,16 @@ def check_transaction_successful(result_code: str) -> bool:
     shortcut to see if the transaction was successful.
     NOTE: might be best to check separately for check_transaction_successfully_processed_needs_review
     """
-    return check_transaction_successfully_processed(
-        result_code
-    ) or check_transaction_successfully_processed_needs_review(result_code)
+    return check_transaction_successfully_processed(result_code) \
+           or check_transaction_successfully_processed_needs_review(result_code)
 
 
 def check_transaction_pending(result_code: str) -> bool:
     """
     shortcut to see if the transaction is pending.
     """
-    return check_transaction_pending(
-        result_code
-    ) or check_transaction_pending_might_change_externally(result_code)
+    return check_transaction_pending_status(result_code) \
+           or check_transaction_pending_might_change_externally(result_code)
 
 
 def check_transaction_rejected(result_code: str) -> bool:
@@ -96,7 +94,7 @@ def check_transaction_successfully_processed_needs_review(result_code: str) -> b
     )
 
 
-def check_transaction_pending(result_code: str) -> bool:
+def check_transaction_pending_status(result_code: str) -> bool:
     """
     Result codes for pending transactions
 
