@@ -1,6 +1,6 @@
 from django.conf import settings
 
-DJANGO_VR_PAYMENT_VERSION = "0.2.7"
+DJANGO_VR_PAYMENT_VERSION = "0.2.8"
 
 # VR Payment Settings
 VR_PAYMENT_BEARER_TOKEN = getattr(
