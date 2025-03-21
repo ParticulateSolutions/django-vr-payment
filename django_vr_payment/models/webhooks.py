@@ -36,7 +36,7 @@ class VRPaymentWebhook(BaseModel):
         self, force_insert=False, force_update=False, using=None, update_fields=None
     ):
         super().save(force_insert, force_update, using, update_fields)
-        if self.webhook_type is "payment":
+        if self.webhook_type == "payment":
             if not self.payment_payload:
                 from django_vr_payment.models.payment import (
                     VRPaymentWebhookPaymentPayload,
