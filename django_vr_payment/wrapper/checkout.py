@@ -34,7 +34,7 @@ class CheckOutWrapper(object):
         :param currency: The currency code of the payment request's amount
         :param tax_amount: Tax amount as Decimal
         :param payment_brand: (optional) The brand specifies the method of payment for the request
-        :param descriptor: (optional) Can be used to populate all or part of the Merchant Name descriptor, which often appears on the first line of the shopper's statement.
+        :param descriptor: (optional) Can be used to populate all or part of the Merchant Name descriptor, which often appears on the first line of the shopper's statement. Max 127 chars.
         :param merchant_invoice_id: (optional) Merchant-provided invoice number, should be unique for your transactions.
         :param merchant_memo: (optional) Merchant-provided additional information
         :param transaction_category: (optional) The category of the transaction. See VR Payment docs for possible values
@@ -47,10 +47,10 @@ class CheckOutWrapper(object):
             "paymentType": payment_type,
             "taxAmount": tax_amount,
             "paymentBrand": payment_brand,
-            "descriptor": descriptor,
+            "descriptor": descriptor[:127] if descriptor else None,
             "merchantTransactionId": merchant_transaction_id,
             "merchantInvoiceId": merchant_invoice_id,
-            "merchantMemo": merchant_memo,
+            "merchantMemo": merchant_memo[:255] if merchant_memo else None,
             "transactionCategory": transaction_category,
         }
         if kwargs:
@@ -66,10 +66,10 @@ class CheckOutWrapper(object):
             payment_type=payment_type,
             tax_amount=tax_amount,
             payment_brand=payment_brand,
-            descriptor=descriptor,
+            descriptor=descriptor[:255] if descriptor else None,
             merchant_transaction_id=merchant_transaction_id,
             merchant_invoice_id=merchant_invoice_id,
-            merchant_memo=merchant_memo,
+            merchant_memo=merchant_memo[:255] if merchant_memo else None,
             transaction_category=transaction_category,
             sandbox=self.sandbox,
         )
