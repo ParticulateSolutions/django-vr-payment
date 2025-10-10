@@ -76,11 +76,12 @@ class AbstractVRPaymentResponse(
         max_length=3,
         null=True,
     )
+    # Note: according to documentation descriptor max-length is 127, but depending on config, vr payment might add data to it, before sending it back.
     descriptor = models.CharField(
         "Descriptor",
         blank=True,
         help_text="The descriptor of the request.",
-        max_length=127,
+        max_length=255,
         null=True,
     )
     risk_score = models.IntegerField(
@@ -192,6 +193,7 @@ class VRPaymentBasicPayment(BaseModel):
         help_text="The payment type for the request. See docs for supported types",
         max_length=2,
     )
+    # Note: according to documentation descriptor max-length is 127, but depending on config, vr payment might add data to it, before sending it back.
     descriptor = models.CharField(
         "Descriptor",
         blank=True,
@@ -199,7 +201,7 @@ class VRPaymentBasicPayment(BaseModel):
         "which often appears on the first line of the shopper's statement. "
         "The full use of this field depends on the Merchant Account configuration. "
         "NOTE: merchant.name can override any data sent in this field.",
-        max_length=127,
+        max_length=255,
         null=True,
     )
     merchant_transaction_id = models.CharField(
